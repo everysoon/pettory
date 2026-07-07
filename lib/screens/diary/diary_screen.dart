@@ -427,7 +427,11 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
-  Widget _buildCard(BuildContext context, DiaryEntry entry) {
+  Widget _buildCard(
+    BuildContext context,
+    DiaryEntry entry, {
+    bool isHintTarget = false,
+  }) {
     final selected = _selectedIds.contains(entry.id);
 
     final card = AppCard(
@@ -547,19 +551,39 @@ class _DiaryScreenState extends State<DiaryScreen> {
       );
     }
 
+    final background = Container(
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+    );
+
+    if (isHintTarget) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: SwipeHintBubble(),
+          ),
+          SwipeHintCard(
+            key: ValueKey(entry.id),
+            background: background,
+            onFinished: _dismissSwipeHint,
+            child: card,
+          ),
+        ],
+      );
+    }
+
     return Dismissible(
       key: ValueKey(entry.id),
       direction: DismissDirection.endToStart,
       onDismissed: (_) => _handleDismissed(context, entry),
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-      ),
+      background: background,
       child: card,
     );
   }
@@ -592,99 +616,93 @@ class _DiaryScreenState extends State<DiaryScreen> {
               tooltip: '일기 쓰기',
               child: const Icon(Icons.edit_rounded, color: Colors.white),
             ),
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _FilterHeaderDelegate(
-                  height: 60,
+      body: CustomScrollView(
+        slivers: [
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _FilterHeaderDelegate(
+              height: 60,
+              child: Container(
+                color: AppColors.cream,
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                alignment: Alignment.centerLeft,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => _openFilterSheet(context),
                   child: Container(
-                    color: AppColors.cream,
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                    alignment: Alignment.centerLeft,
-                    child: InkWell(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () => _openFilterSheet(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _filterSummary,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.cardBorder),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.expand_more_rounded,
+                          size: 18,
+                          color: Colors.black45,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _filterSummary,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.expand_more_rounded,
-                              size: 18,
-                              color: Colors.black45,
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
               ),
-              if (entries.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('🐾', style: TextStyle(fontSize: 32)),
-                          const SizedBox(height: 12),
-                          const Text(
-                            '아직 이 기간에는 추억이 없어요.',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            '새로운 추억을 남겨볼까요?',
-                            style: TextStyle(
-                              color: Colors.black45,
-                              fontSize: 13,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+            ),
+          ),
+          if (entries.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🐾', style: TextStyle(fontSize: 32)),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '아직 이 기간에는 추억이 없어요.',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, i) {
-                      if (i.isOdd) return const SizedBox(height: 16);
-                      final entry = entries[i ~/ 2];
-                      return _buildCard(context, entry);
-                    }, childCount: entries.length * 2 - 1),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '새로운 추억을 남겨볼까요?',
+                        style: TextStyle(color: Colors.black45, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
-            ],
-          ),
-          if (!_isSelecting && _showSwipeHint && entries.isNotEmpty)
-            SwipeHintOverlay(onDismiss: _dismissSwipeHint, topOffset: 140),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, i) {
+                  if (i.isOdd) return const SizedBox(height: 16);
+                  final index = i ~/ 2;
+                  final entry = entries[index];
+                  final isHintTarget =
+                      !_isSelecting && _showSwipeHint && index == 0;
+                  return _buildCard(context, entry, isHintTarget: isHintTarget);
+                }, childCount: entries.length * 2 - 1),
+              ),
+            ),
         ],
       ),
     );
