@@ -17,13 +17,13 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   static const _dataService = MockDataService();
 
-  int _currentIndex = 0;
+  int _currentIndex = 1;
 
   late final List<Pet> _pets = _dataService.loadPets();
   late final List<DiaryEntry> _diaryEntries = _dataService.loadDiaryEntries();
 
   bool _hasShownSwipeHint = false;
-  bool _showSwipeHint = false;
+  bool _showSwipeHint = true;
 
   void _addPet(Pet pet) {
     setState(() {

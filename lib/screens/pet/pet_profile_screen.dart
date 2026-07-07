@@ -85,123 +85,139 @@ class PetProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          pets.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('등록된 반려동물이 없어요'),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () => _openAdd(context),
-                        child: const Text('반려동물 등록하기'),
-                      ),
-                    ],
+      body: pets.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('등록된 반려동물이 없어요'),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => _openAdd(context),
+                    child: const Text('반려동물 등록하기'),
                   ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: pets.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 14),
-                  itemBuilder: (context, index) {
-                    final pet = pets[index];
-                    return Dismissible(
-                      key: ValueKey(pet.id),
-                      direction: DismissDirection.endToStart,
-                      confirmDismiss: (_) => _confirmDelete(context, pet),
-                      onDismissed: (_) => _handleDismissed(context, pet),
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: Colors.white,
-                        ),
+                ],
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.all(20),
+              itemCount: pets.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 14),
+              itemBuilder: (context, index) {
+                final pet = pets[index];
+                final isHintTarget = showHint && index == 0;
+
+                final background = Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.white,
+                  ),
+                );
+
+                final cardContent = InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PetDetailScreen(
+                        pet: pet,
+                        diaryEntries: diaryEntries,
+                        onEditPet: onEditPet,
+                        onDeletePet: onDeletePet,
                       ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => PetDetailScreen(
-                              pet: pet,
-                              diaryEntries: diaryEntries,
-                              onEditPet: onEditPet,
-                              onDeletePet: onDeletePet,
-                            ),
-                          ),
+                    ),
+                  ),
+                  child: AppCard(
+                    child: Row(
+                      children: [
+                        PetAvatar(
+                          color: pet.color,
+                          imagePath: pet.photoPath,
+                          radius: 32,
+                          emojiSize: 26,
                         ),
-                        child: AppCard(
-                          child: Row(
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              PetAvatar(
-                                color: pet.color,
-                                imagePath: pet.photoPath,
-                                radius: 32,
-                                emojiSize: 26,
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      pet.name,
-                                      style: const TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${pet.breed} · 함께한 지 ${pet.daysTogether}일',
-                                      style: const TextStyle(
-                                        color: Colors.black54,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 6,
-                                      children: pet.traits
-                                          .map(
-                                            (t) => Text(
-                                              '#$t',
-                                              style: const TextStyle(
-                                                color: AppColors.primaryDark,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          )
-                                          .toList(),
-                                    ),
-                                  ],
+                              Text(
+                                pet.name,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: Colors.black38,
+                              const SizedBox(height: 4),
+                              Text(
+                                '${pet.breed} · 함께한 지 ${pet.daysTogether}일',
+                                style: const TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 6,
+                                children: pet.traits
+                                    .map(
+                                      (t) => Text(
+                                        '#$t',
+                                        style: const TextStyle(
+                                          color: AppColors.primaryDark,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-          if (showHint)
-            SwipeHintOverlay(
-              onDismiss: () => onSwipeHintShown?.call(),
-              topOffset: 100,
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.black38,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+
+                final card = isHintTarget
+                    ? SwipeHintCard(
+                        key: ValueKey(pet.id),
+                        background: background,
+                        onFinished: () => onSwipeHintShown?.call(),
+                        child: cardContent,
+                      )
+                    : Dismissible(
+                        key: ValueKey(pet.id),
+                        direction: DismissDirection.endToStart,
+                        confirmDismiss: (_) => _confirmDelete(context, pet),
+                        onDismissed: (_) => _handleDismissed(context, pet),
+                        background: background,
+                        child: cardContent,
+                      );
+
+                if (!isHintTarget) return card;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: SwipeHintBubble(),
+                    ),
+                    card,
+                  ],
+                );
+              },
             ),
-        ],
-      ),
     );
   }
 }

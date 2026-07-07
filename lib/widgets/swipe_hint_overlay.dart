@@ -1,25 +1,57 @@
 import 'package:flutter/material.dart';
 
-/// A one-time, full-screen dimmed overlay that shows a swipe-gesture icon to
-/// hint that the item above/behind it can be swiped to delete. Dismissed by
-/// tapping anywhere.
-class SwipeHintOverlay extends StatefulWidget {
-  const SwipeHintOverlay({
-    super.key,
-    required this.onDismiss,
-    this.topOffset = 220,
-  });
+import '../theme.dart';
 
-  final VoidCallback onDismiss;
+/// A small dark tooltip bubble hinting that the card below can be swiped.
+class SwipeHintBubble extends StatelessWidget {
+  const SwipeHintBubble({super.key, this.text = '왼쪽으로 밀면 삭제할 수 있어요'});
 
-  /// Roughly how far down the screen the hinted card sits, so the icon lines up with it.
-  final double topOffset;
+  final String text;
 
   @override
-  State<SwipeHintOverlay> createState() => _SwipeHintOverlayState();
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.textDark,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
 }
 
-class _SwipeHintOverlayState extends State<SwipeHintOverlay>
+/// Wraps a card + its swipe-to-delete background and, once, nudges the card
+/// left (peeking the red background behind it) and back to demonstrate that
+/// it's swipeable — without blocking the rest of the screen. Calls
+/// [onFinished] once the demo completes so the caller can swap back to a
+/// real [Dismissible].
+class SwipeHintCard extends StatefulWidget {
+  const SwipeHintCard({
+    super.key,
+    required this.background,
+    required this.child,
+    required this.onFinished,
+  });
+
+  final Widget background;
+  final Widget child;
+  final VoidCallback onFinished;
+
+  @override
+  State<SwipeHintCard> createState() => _SwipeHintCardState();
+}
+
+class _SwipeHintCardState extends State<SwipeHintCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _offset;
@@ -29,33 +61,35 @@ class _SwipeHintOverlayState extends State<SwipeHintOverlay>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1200),
     );
     _offset = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween(0.0), weight: 15),
       TweenSequenceItem(
         tween: Tween(
           begin: 0.0,
-          end: -28.0,
-        ).chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 1,
+          end: -56.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 25,
       ),
+      TweenSequenceItem(tween: ConstantTween(-56.0), weight: 25),
       TweenSequenceItem(
         tween: Tween(
-          begin: -28.0,
+          begin: -56.0,
           end: 0.0,
-        ).chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 1,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 20,
       ),
+      TweenSequenceItem(tween: ConstantTween(0.0), weight: 15),
     ]).animate(_controller);
-    _playLoop();
+    _play();
   }
 
-  // Loops a bounded number of times (rather than repeating forever) so the
-  // animation settles instead of ticking indefinitely in the background.
-  Future<void> _playLoop() async {
-    for (var i = 0; i < 4 && mounted; i++) {
+  Future<void> _play() async {
+    for (var i = 0; i < 2 && mounted; i++) {
       await _controller.forward(from: 0);
     }
+    if (mounted) widget.onFinished();
   }
 
   @override
@@ -66,45 +100,18 @@ class _SwipeHintOverlayState extends State<SwipeHintOverlay>
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: GestureDetector(
-        onTap: widget.onDismiss,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          color: Colors.black.withValues(alpha: 0.55),
-          child: Padding(
-            padding: EdgeInsets.only(top: widget.topOffset),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedBuilder(
-                      animation: _offset,
-                      builder: (context, child) => Transform.translate(
-                        offset: Offset(_offset.value, 0),
-                        child: child,
-                      ),
-                      child: const Text('👆', style: TextStyle(fontSize: 40)),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '왼쪽으로 스와이프하면 삭제가능!\n화면 아무데나 탭하면 사라져요',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    return Stack(
+      children: [
+        Positioned.fill(child: widget.background),
+        AnimatedBuilder(
+          animation: _offset,
+          builder: (context, child) => Transform.translate(
+            offset: Offset(_offset.value, 0),
+            child: child,
           ),
+          child: widget.child,
         ),
-      ),
+      ],
     );
   }
 }

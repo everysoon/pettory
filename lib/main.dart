@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/splash/splash_screen.dart';
+import 'screens/main_shell.dart';
 import 'theme.dart';
 
 void main() {
@@ -16,7 +16,7 @@ class PetLogApp extends StatelessWidget {
       title: '펫토리',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const SplashScreen(),
+      home: const MainShell(),
     );
   }
 }
