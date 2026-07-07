@@ -4,6 +4,7 @@ import '../models/models.dart';
 import '../services/mock_data_service.dart';
 import 'diary/diary_screen.dart';
 import 'home/home_screen.dart';
+import 'mypage/my_page_screen.dart';
 import 'pet/pet_profile_screen.dart';
 
 class MainShell extends StatefulWidget {
@@ -38,6 +39,13 @@ class _MainShellState extends State<MainShell> {
     setState(() => _showSwipeHint = false);
   }
 
+  void _editPet(Pet pet) {
+    setState(() {
+      final index = _pets.indexWhere((p) => p.id == pet.id);
+      if (index != -1) _pets[index] = pet;
+    });
+  }
+
   /// Deletes [pet] and its diary entries, returning a callback that restores them.
   VoidCallback _deletePet(Pet pet) {
     final petIndex = _pets.indexOf(pet);
@@ -57,6 +65,21 @@ class _MainShellState extends State<MainShell> {
           if (!_diaryEntries.any((e) => e.id == entry.id)) {
             _diaryEntries.add(entry);
           }
+        }
+      });
+    };
+  }
+
+  /// Deletes [entry], returning a callback that restores it.
+  VoidCallback _deleteDiaryEntry(DiaryEntry entry) {
+    final index = _diaryEntries.indexOf(entry);
+
+    setState(() => _diaryEntries.removeWhere((e) => e.id == entry.id));
+
+    return () {
+      setState(() {
+        if (!_diaryEntries.any((e) => e.id == entry.id)) {
+          _diaryEntries.insert(index.clamp(0, _diaryEntries.length), entry);
         }
       });
     };
@@ -94,15 +117,18 @@ class _MainShellState extends State<MainShell> {
         pets: _pets,
         diaryEntries: sortedEntries,
         onSaveEntry: _saveDiaryEntry,
+        onDeleteEntry: _deleteDiaryEntry,
       ),
       PetProfileScreen(
         pets: _pets,
         diaryEntries: sortedEntries,
         onAddPet: _addPet,
+        onEditPet: _editPet,
         onDeletePet: _deletePet,
         showSwipeHint: _showSwipeHint,
         onSwipeHintShown: _dismissSwipeHint,
       ),
+      MyPageScreen(pets: _pets, diaryEntries: sortedEntries),
     ];
 
     return Scaffold(
@@ -119,6 +145,10 @@ class _MainShellState extends State<MainShell> {
           BottomNavigationBarItem(
             icon: Icon(Icons.pets_rounded),
             label: '펫 프로필',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline_rounded),
+            label: '마이페이지',
           ),
         ],
       ),
