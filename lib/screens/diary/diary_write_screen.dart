@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -43,6 +44,8 @@ class _DiaryWriteScreenState extends State<DiaryWriteScreen> {
   ];
 
   bool _uploading = false;
+  int _loadingPhraseIndex = 0;
+  Timer? _loadingTimer;
 
   @override
   void initState() {
@@ -55,8 +58,15 @@ class _DiaryWriteScreenState extends State<DiaryWriteScreen> {
   @override
   void dispose() {
     _memoController.dispose();
+    _loadingTimer?.cancel();
     super.dispose();
   }
+
+  List<String> _loadingPhrasesFor(String petName) => [
+        '🐾 $petName가 오늘을 떠올리는 중이에요...',
+        '간식을 먹었던 기억을 찾고 있어요...',
+        '거의 다 기억났어요...',
+      ];
 
   bool get _canUpload =>
       _selectedPetIds.isNotEmpty && _memoController.text.trim().isNotEmpty;
@@ -75,8 +85,16 @@ class _DiaryWriteScreenState extends State<DiaryWriteScreen> {
   }
 
   Future<void> _upload() async {
-    setState(() => _uploading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
+    setState(() {
+      _uploading = true;
+      _loadingPhraseIndex = 0;
+    });
+    _loadingTimer = Timer.periodic(const Duration(milliseconds: 550), (_) {
+      if (!mounted) return;
+      setState(() => _loadingPhraseIndex = (_loadingPhraseIndex + 1) % 3);
+    });
+    await Future.delayed(const Duration(milliseconds: 1500));
+    _loadingTimer?.cancel();
     if (!mounted) return;
     final random = Random();
     final entry = DiaryEntry(
@@ -174,6 +192,18 @@ class _DiaryWriteScreenState extends State<DiaryWriteScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        if (_uploading) ...[
+          Center(
+            child: Text(
+              _loadingPhrasesFor(
+                widget.pets.firstWhere((p) => _selectedPetIds.contains(p.id), orElse: () => widget.pets.first).name,
+              )[_loadingPhraseIndex],
+              style: const TextStyle(fontSize: 12, color: Colors.black45),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
         ElevatedButton.icon(
           onPressed: _canUpload && !_uploading ? _upload : null,
           icon: _uploading

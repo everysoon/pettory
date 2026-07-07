@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/main_shell.dart';
+import 'screens/splash/splash_screen.dart';
 import 'theme.dart';
 
 void main() {
@@ -13,10 +13,10 @@ class PetLogApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '펫로그',
+      title: '펫토리',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const MainShell(),
+      home: const SplashScreen(),
     );
   }
 }
